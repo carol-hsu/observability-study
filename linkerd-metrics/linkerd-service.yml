@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: destination-publish
+  namespace: linkerd
+spec:
+  selector:
+    linkerd.io/control-plane-component: destination
+  ports:
+    - port: 4191
+      nodePort: 30491
+  type: NodePort
