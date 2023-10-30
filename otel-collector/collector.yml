@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: observ
+  labels:
+    app: otel
+    func: collector
+spec:
+  selector:
+    app: otel-collector
+  ports:
+  - name: receiver
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: prom-metrics
+    port: 8888
+    protocol: TCP
+  - name: exporter
+    port: 8889
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: observ
+  labels:
+    app: otel-collector
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      nodeName: gabbro
+      containers:
+      - image: otel/opentelemetry-collector:0.88.0
+        name: prom
+        args:
+        - '--config=/collector-cfg/config.yml'
+        ports:
+        - containerPort: 4317
+          name: otlp-grpc
+        - containerPort: 8888
+          name: self-metrics
+        - containerPort: 8889
+          name: exporter-port
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 500m
+        volumeMounts:
+        - name: config-file
+          mountPath: /collector-cfg
+      volumes:
+      - name: config-file
+        configMap:
+          name: otel-collector-config
